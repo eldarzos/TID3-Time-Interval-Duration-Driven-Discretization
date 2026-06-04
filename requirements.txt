@@ -1,0 +1,6 @@
+numpy>=1.19.0
+pandas>=1.0.0
+scipy>=1.7.0
+tqdm>=4.60.0
+# Optional: only required by load_uea_tsfile() to parse UEA .ts files.
+# sktime>=0.24.0
