@@ -12,8 +12,16 @@ import zipfile
 import argparse
 import urllib.request
 
-from .standardize import read_ts_file, panel_to_long
-from .run import run_tid3
+try:
+    # Normal package import (e.g. `python -m tid3.datasets`).
+    from .standardize import read_ts_file, panel_to_long
+    from .run import run_tid3
+except ImportError:
+    # Fallback so the file also runs directly (e.g. `python tid3/datasets.py`):
+    # put the package parent on sys.path and import absolutely.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from tid3.standardize import read_ts_file, panel_to_long
+    from tid3.run import run_tid3
 
 # The six UEA multivariate datasets evaluated in the paper.
 PAPER_UEA_DATASETS = [
@@ -103,9 +111,10 @@ def _build_arg_parser():
         description="Download the paper's UEA datasets, standardize them, and run TID3 "
                     "(writes states.csv + sti_series.csv per dataset)."
     )
-    p.add_argument("--dataset", default="all",
+    p.add_argument("--dataset", default="FingerMovements",
                    choices=PAPER_UEA_DATASETS + ["all"],
-                   help="Which UEA dataset to process (default: all six paper datasets).")
+                   help="Which UEA dataset to process. Default: FingerMovements (the smallest "
+                        "paper dataset, for a quick first run). Use '--dataset all' for all six.")
     p.add_argument("--output-dir", default="tid3_runs",
                    help="Root output directory; each dataset goes to <output-dir>/<name>/.")
     p.add_argument("--cache-dir", default="uea_cache", help="Where downloaded .ts files are cached.")
@@ -123,6 +132,9 @@ def _build_arg_parser():
 def main(argv=None):
     args = _build_arg_parser().parse_args(argv)
     names = PAPER_UEA_DATASETS if args.dataset == "all" else [args.dataset]
+    if args.dataset != "all":
+        print(f"Processing dataset '{args.dataset}'. Use '--dataset all' to run all six "
+              f"paper datasets (the large ones, e.g. FaceDetection/MotorImagery, take a while).")
 
     for name in names:
         print(f"\n{'=' * 70}\n{name}\n{'=' * 70}")
