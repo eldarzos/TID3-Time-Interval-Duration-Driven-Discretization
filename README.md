@@ -48,14 +48,37 @@ class (`0` = D0, `1` = D1, the target population). The evaluation in the paper i
 
 ### Building the input
 
-- **UEA archive (`.ts`)** — `load_uea_tsfile(train_path, test_path=None)` parses a UEA
-  multivariate dataset (via `sktime`) into the long format.
+- **Paper UEA datasets (auto-download)** — `tid3/datasets.py` downloads the six UEA datasets
+  used in the paper from the public UEA/UCR archive, parses them, and standardizes them. Uses
+  only the standard library (no `sktime`/`aeon`).
+- **UEA archive (`.ts`)** — `load_uea_tsfile(train_path, test_path=None)` parses local UEA
+  multivariate `.ts` files into the long format (built-in parser, no external dependency).
 - **Arrays / panel data** — `panel_to_long(X, y, positive_label=None)` converts a 3D array of
   shape `[n_instances, n_channels, n_timepoints]` (or an sktime/aeon nested DataFrame) plus a
   label vector `y` into the long format. `EntityID`, `TemporalPropertyID` and `TimeStamp` are
   assigned as 1-based indices.
 
 ## Usage
+
+### Reproduce on the paper's UEA datasets (download + standardize + run)
+
+```bash
+# Download, standardize, and run TID3 on all six paper UEA datasets:
+python -m tid3.datasets --output-dir tid3_runs --bins 3 --duration-preference two_sided
+
+# A single dataset (e.g. the smallest, FingerMovements):
+python -m tid3.datasets --dataset FingerMovements --output-dir tid3_runs --bins 3
+```
+
+The six datasets are `FaceDetection`, `FingerMovements`, `Heartbeat`, `MotorImagery`,
+`SelfRegulationSCP1`, `SelfRegulationSCP2`. Outputs are written to `<output-dir>/<dataset>/`.
+Equivalently from Python:
+
+```python
+from tid3 import load_paper_dataset, run_tid3
+long_df = load_paper_dataset("FingerMovements")          # downloads + standardizes
+run_tid3(long_df, bins=3, output_dir="tid3_runs/FingerMovements", duration_preference="two_sided")
+```
 
 ### End-to-end, from Python
 
@@ -124,7 +147,8 @@ two populations' STI time-duration distributions, given the cutoffs chosen so fa
 ```
 tid3/
 ├── constants.py     # long-format column names
-├── standardize.py   # UEA loader + panel→long converter
+├── standardize.py   # built-in .ts parser + UEA loader + panel→long converter
+├── datasets.py      # download the paper's UEA datasets, standardize, and run (python -m tid3.datasets)
 ├── tid3.py          # the TID3 algorithm (greedy engine + 3 variants)
 ├── utils.py         # state assignment, candidate generation, STI series generation, I/O helpers
 └── run.py           # end-to-end driver (states.csv + STI series); also a CLI (python -m tid3.run)
